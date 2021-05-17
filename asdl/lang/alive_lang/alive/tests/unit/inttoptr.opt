@@ -1,0 +1,5 @@
+%p = alloca
+%x = ptrtoint %p to i64
+%b = inttoptr %x
+  =>
+%b = i8* %p

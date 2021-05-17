@@ -1,0 +1,9 @@
+Name: AddSub:1040
+Pre: C2 == ~C1
+%Y = or %Z, C2
+%X = xor %Y, C1
+%LHS = add %X, 1
+%r = add %LHS, %RHS
+  =>
+%and = and %Z, C1
+%r = sub %RHS, %and

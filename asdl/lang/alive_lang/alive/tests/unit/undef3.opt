@@ -1,0 +1,4 @@
+; ERROR: Mismatch in values of
+%A = select undef, %X, %Y
+  =>
+%A = undef
