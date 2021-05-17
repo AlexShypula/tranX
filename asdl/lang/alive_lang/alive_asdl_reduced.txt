@@ -90,7 +90,6 @@ cnstFunOp = abs | sbits | obits | zbits | ctlz | cttz | log2 | lshr | max | sext
     | width | zext
 
 
-# it seems wise to keep these exactly the same as strings for simplicity
 flag = nsw | nuw | exact
 
 
