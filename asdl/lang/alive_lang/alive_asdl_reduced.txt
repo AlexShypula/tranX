@@ -1,0 +1,106 @@
+# primitive types
+str, int, depth, id, ptr
+
+
+alive = Opt(boolPred? precondition, prog src, prog tgt)
+
+
+prog = Prog(instr* instructions)
+
+
+boolPred = TruePred
+
+
+precOperand = ConstantVal(int val, type t)
+    | UndefVal(type t)
+    | CnstUnaryOp(cnstUnaryOp op, value v)
+    | CnstBinaryOp(cnstBinOp op, const c1, const c2)
+    | CnstFunction(cnstFunOp op, instrOperand* args, type t)
+    | Input(id name, type t) # must start with % or
+
+
+instr = Icmp(id reg, icmpOp op, type t, value v1, value v2)
+    | CopyOperand(id reg, instrOperand v, type t)
+    | BinOp(id reg, binOp op, type t, instrOperand v1, instrOperand v2, flag* flags)
+    | ConversionOp(id reg, conversionOp op, type st, instrOperand v, type t)
+    | Select(id reg, type t, cmpInstr c, instrOperand v1, instrOperand v2) # if conditionalExpr == 1, then v1, else v1
+    | Alloca(id reg, type t, type elemsType, instrOperand numElems, int align) ## allocates mem on stack
+    | Load(id reg, type st, value v, int align)
+    | Store(type st, value src, type t, instrOperand dst, int align)
+    | Skip
+    | Unreachable
+
+
+cmpInstr = Icmp(id reg, icmpOp op, type t, value v1, value v2)
+
+
+instrOperand = CopyOperand(id reg, instrOperand v, type t)
+    | BinOp(id reg, binOp op, type t, instrOperand v1, instrOperand v2, flag* flags)
+    | ConversionOp(id reg, conversionOp op, type st, instrOperand v, type t)
+    | Select(id reg, type t, cmpInstr c, instrOperand v1, instrOperand v2) # if conditionalExpr == 1, then v1, else v1
+    | Alloca(id reg, type t, type elemsType, instrOperand numElems, int align) ## allocates mem on stack
+    | Load(id reg, type st, value v, int align)
+    | ConstantVal(int val, type t)
+    | UndefVal(type t)
+    | CnstUnaryOp(cnstUnaryOp op, value v)
+    | CnstBinaryOp(cnstBinOp op, const c1, const c2)
+    | CnstFunction(cnstFunOp op, instrOperand* args, type t)
+    | Input(id name, type t)
+
+#assignInstr | const | input
+
+
+assignInstr = CopyOperand(id reg, instrOperand v, type t)
+    | BinOp(id reg, binOp op, type t, instrOperand v1, instrOperand v2, flag* flags)
+    | ConversionOp(id reg, conversionOp op, type st, instrOperand v, type t)
+    | Select(id reg, type t, cmpInstr c, instrOperand v1, instrOperand v2) # if conditionalExpr == 1, then v1, else v1
+    | Alloca(id reg, type t, type elemsType, instrOperand numElems, int align) ## allocates mem on stack
+    | Load(id reg, type st, value v, int align)
+
+
+nonAssignInstr = Store(type st, value src, type t, instrOperand dst, int align)
+    | Skip
+    | Unreachable
+
+
+const = ConstantVal(int val, type t)
+    | UndefVal(type t)
+    | CnstUnaryOp(cnstUnaryOp op, value v)
+    | CnstBinaryOp(cnstBinOp op, const c1, const c2)
+    | CnstFunction(cnstFunOp op, instrOperand* args, type t)
+
+
+type = NamedType(str name)
+    | IntType(int size)
+
+
+input = Input(id name, type t) # must start with % or
+
+
+typeFixedValue = TypeFixedValue(id name, value v, int min, int max)
+
+
+value = Input(id name, type t) # must start with % or
+
+
+cnstUnaryOp = Not | Neg
+
+
+cnstFunOp = abs | sbits | obits | zbits | ctlz | cttz | log2 | lshr | max | sext | trunc | umax
+    | width | zext
+
+
+# it seems wise to keep these exactly the same as strings for simplicity
+flag = nsw | nuw | exact
+
+
+icmpOp = EQ | NE | UGT | UGE | ULT | ULE | SGT | SGE | SLT | SLE
+
+
+conversionOp = Trunc | ZExt | SExt | ZExtOrTrunc | Ptr2Int | Int2Ptr | Bitcast
+
+
+binOp = Add | Sub | Mul | UDiv | SDiv | URem | SRem | Shl | AShr | LShr | And | Or | Xor
+
+
+cnstBinOp = And | Or | Xor | Add | Sub | Mul | Div | DivU | Rem | RemU | AShr | LShr | Shl
