@@ -1,0 +1,168 @@
+# primitive types
+str, int, depth, id, ptr
+
+# todo in a later iteration, expand out both CnstFunction and LLVMBoolPred
+# todo into new productions where you customize the number of operands based on the specific instruction
+# todo as some instructions take 1 and some take 2 operands
+
+# todo: in TranX you should allow the pointer network, when producing instrOperand
+# todo: to also copy any pre-existing
+
+# todo in the asdl parser you gotta allow inlining of previously defined operands
+
+# todo: what is the root node
+
+alive = Opt(boolPred? precondition, prog src, prog tgt)
+
+
+prog = Prog(instr* instructions)
+
+
+boolPred = TruePred
+# BinaryBoolPred(binBoolPredOp op, precOperand v1, precOperand v2)
+#     | LLVMBoolPred(llvmBoolPredOp op, precOperand* args) # like with const fun you can parse this out more broadly
+#    | PredOr(boolPred* args)
+#   | PredAnd(boolPred* args)
+#    | PredNot(boolPred v)
+#    | TruePred
+
+
+binBoolPredOp = EQ | NE | SLT | SLE | SGT | SGE | ULT | ULE | UGT | UGE
+
+
+llvmBoolPredOp = eqptrs | isPower2 | isPower2OrZ | isShiftedMask | isSignBit | maskZero |
+  NSWAdd | NUWAdd | NSWSub | NUWSub | NSWMul | NUWMul | NUWShl | OneUse
+
+
+precOperand = ConstantVal(int val, type t)
+    | UndefVal(type t)
+    | CnstUnaryOp(cnstUnaryOp op, value v)
+    | CnstBinaryOp(cnstBinOp op, const c1, const c2)
+    | CnstFunction(cnstFunOp op, instrOperand* args, type t)
+    | Input(id name, type t) # must start with % or
+
+
+#const | input
+
+
+# instr = cmpInstr | assignInstr | nonAssignInstr
+
+instr = Icmp(id reg, icmpOp op, type t, value v1, value v2)
+    | CopyOperand(id reg, instrOperand v, type t)
+    | BinOp(id reg, binOp op, type t, instrOperand v1, instrOperand v2, flag* flags)
+    | ConversionOp(id reg, conversionOp op, type st, instrOperand v, type t)
+    # this will be Icmp here in select as c; it would be nice
+    # to force the c in select to only be of Icmp constructor
+    | Select(id reg, type t, cmpInstr c, instrOperand v1, instrOperand v2) # if conditionalExpr == 1, then v1, else v1
+    # The ‘alloca‘ instruction allocates memory on the stack frame of the currently executing function, to be automatically released when this function returns to its caller. The object is always allocated in the address space for allocas indicated in the datalayout.
+    # align: this is an integer which defines alignment in memory; default is 0
+    | Alloca(id reg, type t, type elemsType, instrOperand numElems, int align) ## allocates mem on stack
+    # | GEP(id reg, type t, ptr p, idx* i, inbounds) # get element pointer ## todo
+    | Load(id reg, type st, value v, int align)
+    | Store(type st, value src, type t, instrOperand dst, int align) # todo align
+    | Skip
+    | Unreachable
+    #| Br(str bb_label , cmpInstr cond , str true, str false) # todo more on this; we actually don't need to support these
+    #| Ret(str bb_label, type t, value val) # todo more on this
+
+
+cmpInstr = Icmp(id reg, icmpOp op, type t, value v1, value v2)
+
+
+# NOTE: we can operate on another instr, const, or value (either input, or typefixedvalue)
+# I am unsure still what typeFixedValue is
+# When referring to a stmt previously written in the src; we should enable our pointer network to point to
+# or copy a src instr as an operand; in fact, we should allow pointers for any instrOperand
+
+
+instrOperand = CopyOperand(id reg, instrOperand v, type t)
+    | BinOp(id reg, binOp op, type t, instrOperand v1, instrOperand v2, flag* flags)
+    | ConversionOp(id reg, conversionOp op, type st, instrOperand v, type t)
+    # this will be Icmp here in select as c; it would be nice
+    # to force the c in select to only be of Icmp constructor
+    | Select(id reg, type t, cmpInstr c, instrOperand v1, instrOperand v2) # if conditionalExpr == 1, then v1, else v1
+    # The ‘alloca‘ instruction allocates memory on the stack frame of the currently executing function, to be automatically released when this function returns to its caller. The object is always allocated in the address space for allocas indicated in the datalayout.
+    # align: this is an integer which defines alignment in memory; default is 0
+    | Alloca(id reg, type t, type elemsType, instrOperand numElems, int align) ## allocates mem on stack
+    # | GEP(id reg, type t, ptr p, idx* i, inbounds) # get element pointer ## todo
+    | Load(id reg, type st, value v, int align)
+    | ConstantVal(int val, type t)
+    | UndefVal(type t)
+    | CnstUnaryOp(cnstUnaryOp op, value v)
+    | CnstBinaryOp(cnstBinOp op, const c1, const c2)
+    | CnstFunction(cnstFunOp op, instrOperand* args, type t)
+    # | Icmp(id reg, icmpOp op, type t, value v1, value v2)
+    | Input(id name, type t)
+
+#assignInstr | const | input
+
+
+assignInstr = CopyOperand(id reg, instrOperand v, type t)
+    | BinOp(id reg, binOp op, type t, instrOperand v1, instrOperand v2, flag* flags)
+    | ConversionOp(id reg, conversionOp op, type st, instrOperand v, type t)
+    # this will be Icmp here in select as c; it would be nice
+    # to force the c in select to only be of Icmp constructor
+    | Select(id reg, type t, cmpInstr c, instrOperand v1, instrOperand v2) # if conditionalExpr == 1, then v1, else v1
+    # The ‘alloca‘ instruction allocates memory on the stack frame of the currently executing function, to be automatically released when this function returns to its caller. The object is always allocated in the address space for allocas indicated in the datalayout.
+    # align: this is an integer which defines alignment in memory; default is 0
+    | Alloca(id reg, type t, type elemsType, instrOperand numElems, int align) ## allocates mem on stack
+    # | GEP(id reg, type t, ptr p, idx* i, inbounds) # get element pointer ## todo
+    | Load(id reg, type st, value v, int align)
+
+
+nonAssignInstr = Store(type st, value src, type t, instrOperand dst, int align) # todo align
+    | Skip
+    | Unreachable
+    #| Br(str bb_label , cmpInstr cond , str true, str false) # todo more on this; we actually don't need to support these
+    #| Ret(str bb_label, type t, value val) # todo more on this
+
+
+
+const = ConstantVal(int val, type t)
+    | UndefVal(type t)
+    | CnstUnaryOp(cnstUnaryOp op, value v)
+    | CnstBinaryOp(cnstBinOp op, const c1, const c2)
+    | CnstFunction(cnstFunOp op, instrOperand* args, type t)
+
+
+type = NamedType(str name)
+    | IntType(int size)
+    # UnknownType(int? depth)
+    # | ArrayType(value? e, type? t, int? d)
+    # todo double check ptr type and array type and all types
+    #| PtrType(type? t, int? d) # default depth = 0
+
+
+
+input = Input(id name, type t) # must start with % or
+
+
+typeFixedValue = TypeFixedValue(id name, value v, int min, int max)
+
+value = Input(id name, type t) # must start with % or
+    # | TypeFixedValue(id name, value v, int min, int max)
+#value = input | typeFixedValue
+
+
+cnstUnaryOp = Not | Neg
+
+
+cnstFunOp = abs | sbits | obits | zbits | ctlz | cttz | log2 | lshr | max | sext | trunc | umax
+    | width | zext
+
+
+# it seems wise to keep these exactly the same as strings for simplicity
+flag = nsw | nuw | exact
+
+
+icmpOp = EQ | NE | UGT | UGE | ULT | ULE | SGT | SGE | SLT | SLE
+#| Var
+
+
+conversionOp = Trunc | ZExt | SExt | ZExtOrTrunc | Ptr2Int | Int2Ptr | Bitcast
+
+
+binOp = Add | Sub | Mul | UDiv | SDiv | URem | SRem | Shl | AShr | LShr | And | Or | Xor
+
+
+cnstBinOp = And | Or | Xor | Add | Sub | Mul | Div | DivU | Rem | RemU | AShr | LShr | Shl

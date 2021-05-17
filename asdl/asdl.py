@@ -146,7 +146,7 @@ class ASDLGrammar(object):
             # parse type name
             new_type = ASDLPrimitiveType(type_name) if type_name in primitive_type_names else ASDLCompositeType(type_name)
             constructors = map(_parse_constructor_from_text, constructors_blocks)
-
+            # print(constructors)
             productions = list(map(lambda c: ASDLProduction(new_type, c), constructors))
             all_productions.extend(productions)
 

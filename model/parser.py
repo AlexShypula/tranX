@@ -25,6 +25,7 @@ from model import nn_utils
 from model.attention_util import AttentionUtil
 from model.nn_utils import LabelSmoothing
 from model.pointer_net import PointerNet
+import random
 
 
 @Registrable.register('default_parser')
@@ -632,14 +633,15 @@ class Parser(nn.Module):
                         for production in productions:
                             prod_id = self.grammar.prod2id[production]
                             prod_score = apply_rule_log_prob[hyp_id, prod_id].data.item()
-                            new_hyp_score = hyp.score + prod_score
+                            new_hyp_score = hyp.score + torch.log(torch.tensor([random.random()]))# prod_score
 
                             applyrule_new_hyp_scores.append(new_hyp_score)
                             applyrule_new_hyp_prod_ids.append(prod_id)
                             applyrule_prev_hyp_ids.append(hyp_id)
                     elif action_type == ReduceAction:
+                        # breakpoint()
                         action_score = apply_rule_log_prob[hyp_id, len(self.grammar)].data.item()
-                        new_hyp_score = hyp.score + action_score
+                        new_hyp_score = hyp.score + torch.log(torch.tensor([random.random()])) # action_score
 
                         applyrule_new_hyp_scores.append(new_hyp_score)
                         applyrule_new_hyp_prod_ids.append(len(self.grammar))
@@ -652,12 +654,13 @@ class Parser(nn.Module):
 
                         if args.no_copy is False:
                             for token, token_pos_list in aggregated_primitive_tokens.items():
-                                sum_copy_prob = torch.gather(primitive_copy_prob[hyp_id], 0, Variable(T.LongTensor(token_pos_list))).sum()
+                                # breakpoint()
+                                sum_copy_prob = torch.log(torch.tensor([random.random()])) # orch.gather(primitive_copy_prob[hyp_id], 0, Variable(T.LongTensor(token_pos_list))).sum()
                                 gated_copy_prob = primitive_predictor_prob[hyp_id, 1] * sum_copy_prob
 
                                 if token in primitive_vocab:
                                     token_id = primitive_vocab[token]
-                                    primitive_prob[hyp_id, token_id] = primitive_prob[hyp_id, token_id] + gated_copy_prob
+                                    primitive_prob[hyp_id, token_id] = primitive_prob[hyp_id, token_id] + torch.log(torch.tensor([random.random()])) # gated_copy_prob
 
                                     hyp_copy_info[token] = (token_pos_list, gated_copy_prob.data.item())
                                 else:
@@ -681,6 +684,7 @@ class Parser(nn.Module):
 
                 if new_hyp_scores is None: new_hyp_scores = gen_token_new_hyp_scores
                 else: new_hyp_scores = torch.cat([new_hyp_scores, gen_token_new_hyp_scores])
+            # breakpoint()
             top_new_hyp_scores, top_new_hyp_pos = torch.topk(new_hyp_scores,
                                                              k=min(new_hyp_scores.size(0), beam_size - len(completed_hypotheses)))
 
@@ -731,9 +735,9 @@ class Parser(nn.Module):
                         if gentoken_new_hyp_unks:
                             token = gentoken_new_hyp_unks[k]
                         else:
-                            token = primitive_vocab.id2word[primitive_vocab.unk_id]
+                            token = primitive_vocab.id2word_[primitive_vocab.unk_id]
                     else:
-                        token = primitive_vocab.id2word[token_id.item()]
+                        token = primitive_vocab.id2word_[token_id.item()]
 
                     action = GenTokenAction(token)
 
@@ -783,6 +787,7 @@ class Parser(nn.Module):
                 break
 
         completed_hypotheses.sort(key=lambda hyp: -hyp.score)
+        # breakpoint()
 
         return completed_hypotheses
 
