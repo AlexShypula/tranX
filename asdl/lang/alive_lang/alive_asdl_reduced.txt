@@ -47,8 +47,6 @@ instrOperand = CopyOperand(id reg, instrOperand v, type t)
     | CnstFunction(cnstFunOp op, instrOperand* args, type t)
     | Input(id name, type t)
 
-#assignInstr | const | input
-
 
 assignInstr = CopyOperand(id reg, instrOperand v, type t)
     | BinOp(id reg, binOp op, type t, instrOperand v1, instrOperand v2, flag* flags)
